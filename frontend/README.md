@@ -19,35 +19,35 @@ Run the following command to install and configure Nginx-rtmp module
 
 →  Installs php7.0-ldap that will allow php to communicate with database backend (LDAP server)
 
-→  Add a new user=nginx and usergroup=nginx to the system. 
+→  Adds a new user=nginx and usergroup=nginx to the system. 
 
 →  Edits /etc/php/7.0/fpm/pool.d/www.conf file to change 
 	 listen.owner to nginx listen.group to nginx
          listen.mode to nginx
 	 
-→ Add the following line in the /usr/local/nginx/conf/fastcgi_params file 
+→ Adds the following line in the /usr/local/nginx/conf/fastcgi_params file 
 
 ```
 fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
 fastcgi_param  PATH_INFO          $fastcgi_script_name;
 ```
-→  Make a working directory and switch to it.
+→  Makes a working directory and switch to it.
 
-→  Download and extract Nginx and Nginx-RTMP source.
+→  Downloads and extract Nginx and Nginx-RTMP source.
 
-→  Download nginx-auth-ldap module
+→  Downloads nginx-auth-ldap module
 
-→  Compile and install Nginx with Nginx-RTMP and nginx-auth-ldap.
+→  Compiles and installs Nginx with Nginx-RTMP and nginx-auth-ldap.
 
-→  Copy the stat.xsl file from nginx-rtmp-module-master folder to html folder in /usr/local/nginx
+→  Copies the stat.xsl file from nginx-rtmp-module-master folder to html folder in /usr/local/nginx
 
-→  Copy the Nginx init script to /etc/init.d/nginx and set permissions to run nginx automatically on system reboot.
+→  Copies the Nginx init script to /etc/init.d/nginx and set permissions to run nginx automatically on system reboot.
 
-→  Copy the base nginx configuration file to /usr/local/nginx/conf/
+→  Copies the base nginx configuration file to /usr/local/nginx/conf/
 
-→  Copy auth.php script to /usr/local/nginx/html for handling php requests and ldap authentication 
+→  Copies auth.php script to /usr/local/nginx/html for handling php requests and ldap authentication 
 
-→  Create a directory for hls and dash recordings
+→  Creates a directory for hls and dash recordings
 
 ### Set iptables
 

@@ -1,13 +1,13 @@
 {
-  "name": "cat-dynserver",
+  "name": "nginx-rtmp-backend",
   "version": "0.0.1",
-  "description": "Web server for dynamic catalogues",
+  "description": "Backend for nginx-rtmp server (chaning configuration file)",
   "main": "api.js",
   "scripts": {
     "start": "nodemon lib/api.js",
     "test": "node_modules/jshint/bin/jshint lib/*.js"
   },
-  "author": "Toby Jaffey <toby@1248.io>",
+  "author": "Nishal",
   "devDependencies": {
     "nodemon": "~0.7.4",
     "jshint": "~2.1.3"
