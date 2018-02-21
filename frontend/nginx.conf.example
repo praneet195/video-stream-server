@@ -1,0 +1,170 @@
+user nginx;
+worker_processes 1;
+events {
+    worker_connections 1024;
+}
+error_log  /usr/local/nginx/logs/error.log debug;
+# RTMP configuration
+rtmp {
+    server {
+        listen 1935;
+# Listen on standard RTMP port
+        chunk_size 4000;
+        application live1 {
+            exec_options on;
+            exec_static /usr/bin/ffmpeg -i rtsp://10.156.14.190:554/live.sdp -an -vcodec copy -f flv rtmp://localhost:1935/live1/cam_0002d13e3f01;
+            exec_static /usr/bin/ffmpeg -i rtsp://10.156.14.133:554/live.sdp -an -vcodec copy -f flv rtmp://localhost:1935/live1/cam_0002d15aa905;
+            exec_static /usr/bin/ffmpeg -i rtsp://10.18.20.101/h264 -an -vcodec copy -f flv rtmp://localhost:1935/live1/iisc_101;
+            exec_static /usr/bin/ffmpeg -i rtsp://10.18.20.104/h264 -an -vcodec copy -f flv rtmp://localhost:1935/live1/iisc_104;
+            exec_static /usr/bin/ffmpeg -i rtsp://10.18.20.105/h264 -an -vcodec copy -f flv rtmp://localhost:1935/live1/iisc_105;
+            exec_static /usr/bin/ffmpeg -i rtsp://10.18.20.106/h264 -an -vcodec copy -f flv rtmp://localhost:1935/live1/iisc_106;
+
+            #exec_pull /usr/bin/ffmpeg -i rtsp://10.156.14.190:554/live.sdp -an -vcodec copy -f flv rtmp://localhost:1935/$app/$name name=cam_0002d13e3f01;
+            #exec_pull /usr/bin/ffmpeg -i rtsp://10.156.14.133:554/live.sdp -an -vcodec copy -f flv rtmp://localhost:1935/$app/$name name=cam_0002d15aa905;
+            #exec_pull /usr/bin/ffmpeg -i rtsp://10.18.20.101/h264 -an -vcodec copy -f flv rtmp://localhost:1935/$app/$name name=iisc_101;
+            #exec_pull /usr/bin/ffmpeg -i rtsp://10.18.20.104/h264 -an -vcodec copy -f flv rtmp://localhost:1935/$app/$name name=iisc_104;
+            #exec_pull /usr/bin/ffmpeg -i rtsp://10.18.20.105/h264 -an -vcodec copy -f flv rtmp://localhost:1935/$app/$name name=iisc_105;
+            #exec_pull /usr/bin/ffmpeg -i rtsp://10.18.20.106/h264 -an -vcodec copy -f flv rtmp://localhost:1935/$app/$name name=iisc_106;
+
+            drop_idle_publisher 60s;
+            record off;
+            record_interval 30s;
+            record_suffix -%d-%b-%y-%T.flv;
+            record_path /usr/local/nginx/recording;
+            meta copy;
+            live on;
+            hls on;
+            hls_path /usr/local/nginx/recording/hls;
+            hls_fragment 2;
+            hls_playlist_length 60;
+	    on_play http://localhost:8088/auth.php;
+	    notify_method get;
+
+        }
+#        application live2 {
+#            pull rtmp://localhost:1935/live1 name=cam_0002d13e3f01 static;
+#            pull rtmp://localhost:1935/live1 name=cam_0002d15aa905 static;
+#            pull rtmp://localhost:1935/live1 name=iisc_101 static;
+#            pull rtmp://localhost:1935/live1 name=iisc_104 static;
+#            pull rtmp://localhost:1935/live1 name=iisc_105 static;
+#            pull rtmp://localhost:1935/live1 name=iisc_106 static;
+#            record off;
+#            record_interval 30s;
+#            record_suffix -%d-%b-%y-%T.flv;
+#            record_path /usr/local/nginx/recording;
+#            meta copy;
+#            live on;
+#            hls on;
+#            hls_path /usr/local/nginx/recording/hls;
+#            hls_fragment 2;
+#            hls_playlist_length 60;
+#	    on_play http://localhost:8088/auth.php;
+#	    notify_method get;
+#        }
+    }
+}
+http {
+    sendfile off;
+    tcp_nopush on;
+    directio 512;
+    default_type application/octet-stream;
+    include mime.types;
+    client_body_timeout 120;
+    client_header_timeout 120;
+    keepalive_timeout 150;
+    send_timeout 100;
+    gzip on;
+    auth_ldap_cache_enabled on;
+    auth_ldap_cache_expiration_time 100000;
+    auth_ldap_cache_size 1000;
+    ldap_server ad_1 {
+        url $ldap_url;
+        binddn $bind_path;
+        binddn_passwd $bind_password;
+        group_attribute member;
+        group_attribute_is_dn on;
+        require valid_user;
+        require group $allowed_group;
+        satisfy all;    
+    }
+    server {
+        listen 8080;
+	auth_ldap "Login with LDAP account";
+	auth_ldap_servers ad_1;
+        root /usr/local/nginx/html;
+        index index.html index.htm;
+        location /stat {
+            rtmp_stat all;
+            rtmp_stat_stylesheet stat.xsl;
+        }
+        location /stat.xsl {
+            root html;
+        }
+        location /hls {
+# Disable cache
+            root /usr/local/nginx/recording;
+            add_header 'Cache-Control' 'no-cache';
+# CORS setup
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Expose-Headers' 'Content-Length';
+# allow CORS preflight requests
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Max-Age' 1728000;
+                add_header 'Content-Type' 'text/plain charset=UTF-8';
+                add_header 'Content-Length' 0;
+                return 204;
+            }
+            types {
+                application/dash+xml mpd;
+                application/vnd.apple.mpegurl m3u8;
+                video/mp2t ts;
+            }
+        }
+        location /dash {
+            root /usr/local/nginx/recording;
+            add_header Cache-Control no-cache;
+# To avoid issues with cross-domain HTTP requests (e.g. during development)
+            add_header Access-Control-Allow-Origin *;
+        }
+    }
+    server {
+        listen 8088;
+        root /usr/local/nginx/html;
+        index index.html index.htm;
+        location ~ \.php$ {
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
+            fastcgi_intercept_errors on;
+            include fastcgi_params;
+        }
+        location /control {
+            rtmp_control all;
+# Enable CORS
+            add_header Access-Control-Allow-Origin * always;
+        }
+        location /create_stream {
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-NginX-Proxy true;
+            proxy_pass http://nodejs_server/create_stream;
+            proxy_redirect off;
+        }
+        location /remove_stream {
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-NginX-Proxy true;
+            proxy_pass http://nodejs_server/remove_stream;
+            proxy_redirect off;
+        }
+    }
+    upstream nodejs_server {
+        server 127.0.0.1:8001;
+    }
+    map $request_method $upstream {
+        default nodejs_server;
+    }
+
+}
