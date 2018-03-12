@@ -14,8 +14,6 @@ sudo adduser nginx nginx
 sudo sed -i -e 's/listen.owner = www-data/listen.owner = nginx/' /etc/php/7.0/fpm/pool.d/www.conf 
 sudo sed -i -e 's/listen.group = www-data/listen.group = nginx/' /etc/php/7.0/fpm/pool.d/www.conf 
 sudo sed -i -e 's/;listen.mode = 0660/listen.mode = 0660/' /etc/php/7.0/fpm/pool.d/www.conf 
-sudo sed -i -e "$ a fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;" /usr/local/nginx/conf/fastcgi_params
-sudo sed -i -e "$ a fastcgi_param  PATH_INFO          \$fastcgi_script_name;" /usr/local/nginx/conf/fastcgi_params
 sudo service php7.0-fpm restart
 mkdir nginx
 cd nginx
@@ -35,3 +33,5 @@ sudo /usr/sbin/update-rc.d -f nginx defaults
 sudo cp ../../nginx.conf /usr/local/nginx/conf/nginx.conf
 sudo cp ../../auth.php /usr/local/nginx/html
 sudo mkdir /usr/local/nginx/recording
+sudo sed -i -e "$ a fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;" /usr/local/nginx/conf/fastcgi_params
+sudo sed -i -e "$ a fastcgi_param  PATH_INFO          \$fastcgi_script_name;" /usr/local/nginx/conf/fastcgi_params
