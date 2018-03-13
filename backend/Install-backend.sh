@@ -20,6 +20,8 @@ case $1 in
 		    sudo npm install nginx-conf
 		    sudo npm install node-forge
 		    sudo node pwd_script.js $password
+		    sudo cp rc.local /etc/rc.local
+                    sudo chmod +x /etc/rc.local
                     ;;
 	*)          usage
     esac
